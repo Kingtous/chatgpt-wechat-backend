@@ -5,7 +5,7 @@
   "scripts": {
     "start": "tsc && node dist/main.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsc && nodemon dist/main.js"
+    "dev": "nodemon"
   },
   "keywords": [
     "wechat"

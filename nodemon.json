@@ -1,0 +1,6 @@
+{
+    "watch": ["src", "./main.ts", "./const.ts"],
+    "ext": "ts,json",
+    "ignore": ["src/**/*.spec.ts"],
+    "exec": "tsc && node ./dist/main.js"
+}
