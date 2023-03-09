@@ -14,7 +14,7 @@ function route(server: FastifyInstance) {
         const q = request.query as VerifyQuery;
         let arr: string[] = [wechatToken, q.timestamp.toString(), q.nonce.toString()];
         arr.sort((a,b) => a.localeCompare(b));
-        const sha1 = toSha1(arr.join())
+        const sha1 = toSha1(arr.join(""))
         if (sha1 === q.signature) {
             // Success.
             reply.send(q.echostr)

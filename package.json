@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "tsc && node dist/main.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsc && nodemon dist/main.js"
   },
   "keywords": [
     "wechat"
@@ -22,6 +23,7 @@
     "@types/sha1": "^1.1.3",
     "autoenv": "^1.0.7",
     "dotenv-cli": "^7.0.0",
+    "nodemon": "^2.0.21",
     "typescript": "^4.9.5"
   },
   "description": ""

@@ -1,10 +1,11 @@
-import Fastify from "fastify";
-import router from './src/router';
 /// CONFIGURE ENV START
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({
+  debug: true
+});
 /// CONFIGURE ENV END
-
+import Fastify from "fastify";
+import router from './src/router';
 /// CONST AREA START
 const server = Fastify({
   logger: true,
