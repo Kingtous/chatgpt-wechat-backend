@@ -1,3 +1,6 @@
+/// ACCESS_TOKEN START
+(globalThis as any).accessToken = "";
+
 /// KEY START
 export const chatgptKey: string = process.env.CHATGPT_KEY ?? "";
 export const wechatToken: string = process.env.WECHAT_TOKEN ?? "";

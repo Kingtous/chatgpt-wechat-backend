@@ -5,6 +5,7 @@ dotenv.config({
 });
 /// CONFIGURE ENV END
 import Fastify from "fastify";
+import parser from './src/utils/parser';
 import router from './src/router';
 /// CONST AREA START
 const server = Fastify({
@@ -13,7 +14,14 @@ const server = Fastify({
 const port = 3000
 /// CONST AREA END
 
+/// XML CONF
+// server.register(require("fastify-xml-body-parser"), {
+//   contentType: 'application/xml',
+//   validate: true
+// })
+
 function main() {
+  parser(server);
   router(server);
   // Run the server!
   server.listen({ port: port }, function (err, address) {
