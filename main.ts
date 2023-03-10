@@ -7,6 +7,7 @@ dotenv.config({
 import Fastify from "fastify";
 import parser from './src/utils/parser';
 import router from './src/router';
+import crontab from './src/crontab';
 /// CONST AREA START
 const server = Fastify({
   logger: true,
@@ -23,6 +24,7 @@ const port = 3000
 function main() {
   parser(server);
   router(server);
+  crontab();
   // Run the server!
   server.listen({ port: port }, function (err, address) {
     if (err) {

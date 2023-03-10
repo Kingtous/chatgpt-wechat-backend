@@ -1,8 +1,6 @@
 import { XMLBuilder } from "fast-xml-parser";
 import axios from 'axios';
-import { wechatToken } from "../../const";
-
-
+import { wechatAccessToken, wechatToken } from "../../const";
 
 export function newTextResponse(toUser: string, fromUser: string, text: string) {
     const xmlBuilder = new XMLBuilder({})
@@ -24,6 +22,7 @@ export function newTextResponse(toUser: string, fromUser: string, text: string) 
     })
 }
 
+/// 需要有客服权限的公众号才行
 export async function sendText(toUser: string, content: string) {
     await axios.post("https://api.weixin.qq.com/cgi-bin/message/custom/send", {
         "touser": toUser, // OpenID
@@ -34,9 +33,12 @@ export async function sendText(toUser: string, content: string) {
         }
     },
         {
+            params: {
+                "access_token": wechatAccessToken()
+            },
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + wechatToken
+                "Content-Type": "application/json",
+                "Authorization": ""
             }
         })
 }
