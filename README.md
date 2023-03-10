@@ -11,6 +11,18 @@
 
 使用`nodemon`，直接输入`npm run dev`运行即可，修改代码后可直接完成启动部署。
 
+
+## 如何添加配置
+
+`.env.example`含有项目必选、可选的配置。填写，并重命名为`.env`。
+
+```shell
+CHATGPT_KEY=    #必选
+WECHAT_TOKEN=   #必选
+WECHAT_APPID=   #可选，没有用过目前
+WECHAT_SECRET=  #可选，没有用过目前
+```
+
 ## 如何启动
 
 ```shell
