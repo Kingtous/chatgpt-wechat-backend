@@ -1,9 +1,10 @@
 # ChatGPT 微信公众号 后端
 
+请扫码进入公众号试用：
+
+![2023-03-10_17-17](https://user-images.githubusercontent.com/39793325/224280748-92f95675-37f2-4388-a517-f5b82b677174.png)
 
 技术栈：NodeJs + Typescript + Fastify
-
-> 正在开发，稍安勿躁
 
 
 ## 如何进行二次开发
