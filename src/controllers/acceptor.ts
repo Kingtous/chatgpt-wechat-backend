@@ -30,13 +30,13 @@ async function handleMsg(xml: any, reply: FastifyReply) {
 //   <Idx>xxxx</Idx>
 // </xml>
 async function handleTextMsg(xml: any, reply: FastifyReply) {
-    const msg = xml.Content as string;
+    const msg = xml.Content.toString() as string;
     if (msg.trim().length == 0) {
         reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "咋回事，不能发送空内容哦"));
     } else {
         let requestKey = xml.FromUserName + "_" + xml.CreateTime;
         if (!cacheMap.has(requestKey)) {
-            getChatGPTAnswerSync(msg).then((response) => {
+            getChatGPTAnswerSync(msg, xml.FromUserName.toString()).then((response) => {
                 cacheMap.set(requestKey, response);
             }).catch((reason) => {
                 cacheMap.set(requestKey, reason);
@@ -59,7 +59,7 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
                     if (resp != null) {
                         reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, resp));
                     } else {
-                        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "由于功能限制，超过15s还未返回数据"));
+                        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "哎哟，超时啦！可以重试一下呢，或者问一个简单一点的问题，或者帮作者大大解决这个限制哦 https://github.com/Kingtous/chatgpt-wechat-backend。\n 由于wx功能限制，目前只允许15s内返回数据，所以我只能等待AI思考10s哦，目前还在想办法解决这个问题呢。"));
                     }
                 } else {
                     checkTimes.set(requestKey, checkTimes.get(requestKey) as number + 1);
