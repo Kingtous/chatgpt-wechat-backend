@@ -12,7 +12,7 @@ import crontab from './src/crontab';
 const server = Fastify({
   logger: true,
 });
-const port = 3000
+const port = parseInt(process.env.PORT || "3000")
 /// CONST AREA END
 
 /// XML CONF
