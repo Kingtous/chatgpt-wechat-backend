@@ -24,7 +24,7 @@ const port = parseInt(process.env.PORT || "3000")
 function main() {
   parser(server);
   router(server);
-  crontab();
+  // crontab();
   // Run the server!
   server.listen({ port: port }, function (err, address) {
     if (err) {
