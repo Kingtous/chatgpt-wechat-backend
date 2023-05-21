@@ -3,12 +3,13 @@ import { apiPath, wechatToken } from "../../const";
 import { toSha1 } from "../utils/encrypt";
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { newTextResponse, sendText } from "../utils/response";
-import { getChatGPTAnswerSync } from "./chatgpt";
+import { getChatGPTAnswerStream, getChatGPTAnswerSync } from "./chatgpt";
 import { setTimeout } from "timers/promises";
 
 const xmlParser = new XMLParser()
 var cacheMap = new Map()
-var checkTimes = new Map()
+const requestingMap = new Map<string, boolean>()
+const footerText = "\n\n免费不易，进入https://kingtous.cn，关注作者的最新动态～";
 
 async function handleMsg(xml: any, reply: FastifyReply) {
     if (xml.MsgType === "text") {
@@ -30,42 +31,47 @@ async function handleMsg(xml: any, reply: FastifyReply) {
 //   <Idx>xxxx</Idx>
 // </xml>
 async function handleTextMsg(xml: any, reply: FastifyReply) {
-    const msg = xml.Content.toString() as string;
-    if (msg.trim().length == 0) {
-        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "咋回事，不能发送空内容哦"));
-    } else {
-        let requestKey = xml.FromUserName + "_" + xml.CreateTime;
-        if (!cacheMap.has(requestKey)) {
-            getChatGPTAnswerSync(msg, xml.FromUserName.toString()).then((response) => {
-                cacheMap.set(requestKey, response);
-            }).catch((reason) => {
-                cacheMap.set(requestKey, reason);
-            })
-            cacheMap.set(requestKey, null);
-            checkTimes.set(requestKey, 1);
-            setTimeout(30 * 1000, () => {
-                cacheMap.delete(requestKey);
-                checkTimes.delete(requestKey);
-            });
-            console.log(checkTimes.get(requestKey));
+    const msg = (xml.Content.toString() as string).trim();
+    if (msg.length == 0) {
+        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "咋回事，不能发送空内容哦" + footerText));
+    } else if (msg === '0') {
+        const ans: string[] = cacheMap.get(xml.FromUserName) ?? [];
+        if (ans.length == 0) {
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您暂时还没有回答，如果您已输入问题，请耐心等待一会哦，输入0可以再次查询" + footerText));
         } else {
-            let resp = cacheMap.get(requestKey);
-            if (resp != null) {
-                reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, resp));
-            } else {
-                let checkTime = checkTimes.get(requestKey) as number;
-                if (checkTime === 2) {
-                    let resp = cacheMap.get(requestKey);
-                    if (resp != null) {
-                        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, resp));
-                    } else {
-                        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "哎哟，超时啦！可以重试一下呢，或者问一个简单一点的问题，或者帮作者大大解决这个限制哦 https://github.com/Kingtous/chatgpt-wechat-backend。\n 由于wx功能限制，目前只允许15s内返回数据，所以我只能等待AI思考10s哦，目前还在想办法解决这个问题呢。"));
-                    }
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.length + "条历史回答：\n" + ans.join("\n\n") + footerText));
+        }
+    } else {
+        if (!(requestingMap.get(xml.FromUserName) ?? false)) {
+            requestingMap.set(xml.FromUserName, true);
+            getChatGPTAnswerSync(msg, xml.FromUserName).then((answer) => {
+                if (cacheMap.get(xml.FromUserName) === undefined) {
+                    cacheMap.set(xml.FromUserName, [answer]);
                 } else {
-                    checkTimes.set(requestKey, checkTimes.get(requestKey) as number + 1);
-                    console.log(checkTimes.get(requestKey));
+                    var records: string[] = cacheMap.get(xml.FromUserName);
+                    records.push(answer);
+                    if (records.length > 5) {
+                        records = records.slice(records.length - 5, records.length);
+                        cacheMap.set(xml.FromUserName, records);
+                    }
                 }
-            }
+                requestingMap.set(xml.FromUserName, false);
+            }).catch((e) => {
+                if (cacheMap.get(xml.FromUserName) === undefined) {
+                    cacheMap.set(xml.FromUserName, ["请求失败：" + e.toString()]);
+                } else {
+                    var records: string[] = cacheMap.get(xml.FromUserName);
+                    records.push("请求失败：" + e.toString());
+                    if (records.length > 5) {
+                        records = records.slice(records.length - 5, records.length);
+                        cacheMap.set(xml.FromUserName, records);
+                    }
+                }
+                requestingMap.set(xml.FromUserName, false);
+            });
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您的问题是：" + msg + "\n\n正在获取答案，输入0可查询最近5条回答哦。" + footerText));
+        } else {
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有正在获取答案的请求，请耐心等候，输入0查询最近回答。" + footerText));
         }
     }
 }

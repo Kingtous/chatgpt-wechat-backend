@@ -6,7 +6,8 @@
     "build": "rimraf ./dist && tsc",
     "start": "node dist/main.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "build_ant_run": "rimraf ./dist && tsc && node dist/main.js"
   },
   "keywords": [
     "wechat"
