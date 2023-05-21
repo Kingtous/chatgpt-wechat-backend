@@ -41,6 +41,9 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
         } else {
             reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.length + "条历史回答：\n\n" + ans.reverse().join("\n===\n") + footerText));
         }
+    } else if (msg === 'clear') {
+        cacheMap.set(xml.FromUserName, []);
+        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "已清除历史回答" + footerText));
     } else {
         if (!(requestingMap.get(xml.FromUserName) ?? false)) {
             requestingMap.set(xml.FromUserName, true);
