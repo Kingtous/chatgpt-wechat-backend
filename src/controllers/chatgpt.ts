@@ -2,7 +2,10 @@ import axios from 'axios';
 import { FastifyReply } from 'fastify';
 import { chatgptKey } from '../../const';
 import {Transform, TransformCallback} from 'stream';
-import { json } from 'stream/consumers';
+
+const context = new Map<string, object[]>()
+const MAX_TOKEN_LEN = 500;
+const CONTEXT_MAX_LEN_PER_USER = 10;
 
 // <xml>
 //   <ToUserName><![CDATA[toUser]]></ToUserName>
@@ -22,10 +25,6 @@ class ChatGPTAsyncStream extends Transform {
 
   _transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void {
     const chunkBuffer: Buffer = chunk;
-    // var chunkString = "{" + chunkBuffer.toString() + "}";
-    // chunkString = chunkString.replace("{data:", "{\"data\":");
-    // console.log("chunk: ", chunkString);
-    // const text = JSON.parse(chunkString)['data']['choices'][0]['delta']['content'] ?? "";
     const prefixedChunk = Buffer.from(chunkBuffer+ this.suffix.toString());
     this.push(prefixedChunk);
     console.log("transform chatgpt", prefixedChunk);
@@ -34,18 +33,18 @@ class ChatGPTAsyncStream extends Transform {
 }
 
 export async function getChatGPTAnswerSync(content: string, user: string) {
+    var contextForUser = context.get(user) ?? [];
+    contextForUser.push({
+        'role': 'user',
+        'content': content,
+        'name': user 
+    });
     const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
             'model': 'gpt-3.5-turbo',
-            'messages': [
-                {
-                    'role': 'user',
-                    'content': content,
-                    'name': user
-                }
-            ],
-            'max_tokens': 1000,
+            'messages': contextForUser,
+            'max_tokens': MAX_TOKEN_LEN,
             'user': user
         },
         {
@@ -53,15 +52,24 @@ export async function getChatGPTAnswerSync(content: string, user: string) {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + chatgptKey
             },
-            timeout: 60000, // 60s超时
+            timeout: 60000 * 5, // 5分钟超时
             timeoutErrorMessage: "访问超时了，请稍后再尝试吧"
         }
     );
-    return response.data.choices[0].message.content;
+    const resp = response.data.choices[0].message.content;
+    contextForUser.push({
+        'role': 'assistant',
+        'content': resp,
+        'name': "GPT" 
+    });
+    if (contextForUser.length > CONTEXT_MAX_LEN_PER_USER) {
+        contextForUser = contextForUser.slice(contextForUser.length - CONTEXT_MAX_LEN_PER_USER, contextForUser.length);
+    }
+    context.set(user, contextForUser);
+    return resp;
 }
 
 export async function getChatGPTAnswerStream(content: string, toUser: string, fromUser: string, reply: FastifyReply) {
-    console.log("start with stream")
     const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
@@ -81,15 +89,13 @@ export async function getChatGPTAnswerStream(content: string, toUser: string, fr
                 'Content-Type': 'application/json', 'stream': true,
                 'Authorization': 'Bearer ' + chatgptKey
             },
-            // timeout: 15000, // 15s超时
+            timeout: 15000 * 4 * 5, // 5分钟超时
             timeoutErrorMessage: "访问超时了，请稍后再尝试吧"
         }
     );
-    console.log("start stream");
     const s = new ChatGPTAsyncStream(toUser, fromUser);
     reply.raw.write(s.prefix);
     // add prefix
     const prefixedStream = response.data.pipe(s);
-    console.log("pipe raw");
     prefixedStream.pipe(reply.raw);
 }

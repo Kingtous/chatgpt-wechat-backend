@@ -39,7 +39,7 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
         if (ans.length == 0) {
             reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您暂时还没有回答，如果您已输入问题，请耐心等待一会哦，输入0可以再次查询" + footerText));
         } else {
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.length + "条历史回答：\n" + ans.join("\n\n") + footerText));
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.length + "条历史回答：\n\n" + ans.reverse().join("\n===\n") + footerText));
         }
     } else {
         if (!(requestingMap.get(xml.FromUserName) ?? false)) {
@@ -50,8 +50,8 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
                 } else {
                     var records: string[] = cacheMap.get(xml.FromUserName);
                     records.push(answer);
-                    if (records.length > 5) {
-                        records = records.slice(records.length - 5, records.length);
+                    if (records.length > 3) {
+                        records = records.slice(records.length - 3, records.length);
                         cacheMap.set(xml.FromUserName, records);
                     }
                 }
@@ -62,14 +62,14 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
                 } else {
                     var records: string[] = cacheMap.get(xml.FromUserName);
                     records.push("请求失败：" + e.toString());
-                    if (records.length > 5) {
-                        records = records.slice(records.length - 5, records.length);
+                    if (records.length > 3) {
+                        records = records.slice(records.length - 3, records.length);
                         cacheMap.set(xml.FromUserName, records);
                     }
                 }
                 requestingMap.set(xml.FromUserName, false);
             });
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您的问题是：" + msg + "\n\n正在获取答案，输入0可查询最近5条回答哦。" + footerText));
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您的问题是：" + msg + "\n\n正在获取答案，输入0可查询最近3条回答哦。" + footerText));
         } else {
             reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有正在获取答案的请求，请耐心等候，输入0查询最近回答。" + footerText));
         }
