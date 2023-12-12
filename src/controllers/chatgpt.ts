@@ -43,13 +43,13 @@ export async function getChatGPTAnswerSync(content: string, user: string) {
             if (obj.type == 'ask') {
                 contextForUser.push({
                     'role': 'user',
-                    'content': content,
+                    'content': obj.obj,
                     'name': user
                 });
             } else {
                 contextForUser.push({
                     'role': 'assistant',
-                    'content': content,
+                    'content': obj.obj,
                     'name': user
                 });
             }

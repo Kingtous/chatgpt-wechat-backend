@@ -8,7 +8,7 @@ import { setTimeout } from "timers/promises";
 import { cleanHistoryForUser, formatHistory, queryHistoryForUser, storeAnswerToUser, storeAskToUser } from "../utils/store";
 
 const requestingMap = new Map<string, boolean>()
-const footerText = "由 khoming 公众号提供服务";
+const footerText = "\n由 khoming 公众号提供服务";
 
 async function handleMsg(xml: any, reply: FastifyReply) {
     if (xml.MsgType === "text") {
@@ -52,6 +52,7 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
                 await storeAnswerToUser(xml.FromUserName, answer);
                 requestingMap.set(xml.FromUserName, false);
             }).catch((e) => {
+                console.log(e);
                 requestingMap.set(xml.FromUserName, false);
                 storeAnswerToUser(xml.FromUserName, '请求失败，请重试。');
             });
