@@ -5,9 +5,8 @@ import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { newTextResponse, sendText } from "../utils/response";
 import { getChatGPTAnswerStream, getChatGPTAnswerSync } from "./chatgpt";
 import { setTimeout } from "timers/promises";
+import { cleanHistoryForUser, formatHistory, queryHistoryForUser, storeAnswerToUser, storeAskToUser } from "../utils/store";
 
-const xmlParser = new XMLParser()
-var cacheMap = new Map()
 const requestingMap = new Map<string, boolean>()
 const footerText = "\n\n免费不易，进入https://kingtous.cn，关注作者的最新动态～";
 
@@ -31,51 +30,39 @@ async function handleMsg(xml: any, reply: FastifyReply) {
 //   <Idx>xxxx</Idx>
 // </xml>
 async function handleTextMsg(xml: any, reply: FastifyReply) {
-    const msg = (xml.Content.toString() as string).trim();
+    var msg = (xml.Content.toString() as string).trim();
     if (msg.length == 0) {
         reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "咋回事，不能发送空内容哦" + footerText));
-    } else if (msg === '0') {
-        const ans: string[] = cacheMap.get(xml.FromUserName) ?? [];
-        if (ans.length == 0) {
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您暂时还没有回答，如果您已输入问题，请耐心等待一会哦，输入0可以再次查询" + footerText));
+    } else if (msg === '/q') {
+        const ans = await queryHistoryForUser(xml.FromUserName);
+        if (ans == null) {
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您暂时还没有回答，如果您已输入问题，请耐心等待一会哦，输入/q可以再次查询" + footerText));
         } else {
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.length + "条历史回答：\n\n" + ans.reverse().join("\n===\n") + footerText));
+            const ansString = formatHistory(ans.objs);
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.length + "条历史回答：\n\n" + ansString + footerText));
         }
-    } else if (msg === 'clear') {
-        cacheMap.set(xml.FromUserName, []);
+    } else if (msg === '/c') {
+        await cleanHistoryForUser(xml.FromUserName);
         reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "已清除历史回答" + footerText));
-    } else {
+    } else if (msg.startsWith('/a ')){
+        msg = msg.substring(2);
         if (!(requestingMap.get(xml.FromUserName) ?? false)) {
             requestingMap.set(xml.FromUserName, true);
-            getChatGPTAnswerSync(msg, xml.FromUserName).then((answer) => {
-                if (cacheMap.get(xml.FromUserName) === undefined) {
-                    cacheMap.set(xml.FromUserName, [answer]);
-                } else {
-                    var records: string[] = cacheMap.get(xml.FromUserName);
-                    records.push(answer);
-                    if (records.length > 3) {
-                        records = records.slice(records.length - 3, records.length);
-                        cacheMap.set(xml.FromUserName, records);
-                    }
-                }
+            getChatGPTAnswerSync(msg, xml.FromUserName).then(async (answer) => {
+                await storeAnswerToUser(xml.FromUserName, answer);
                 requestingMap.set(xml.FromUserName, false);
             }).catch((e) => {
-                if (cacheMap.get(xml.FromUserName) === undefined) {
-                    cacheMap.set(xml.FromUserName, ["请求失败：" + e.toString()]);
-                } else {
-                    var records: string[] = cacheMap.get(xml.FromUserName);
-                    records.push("请求失败：" + e.toString());
-                    if (records.length > 3) {
-                        records = records.slice(records.length - 3, records.length);
-                        cacheMap.set(xml.FromUserName, records);
-                    }
-                }
                 requestingMap.set(xml.FromUserName, false);
+                storeAnswerToUser(xml.FromUserName, '请求失败，请重试。');
             });
             reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您的问题是：" + msg + "\n\n正在获取答案，输入0可查询最近3条回答哦。" + footerText));
+            // add to s3
+            storeAskToUser(xml.FromUserName, msg);
         } else {
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有正在获取答案的请求，请耐心等候，输入0查询最近回答。" + footerText));
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有正在获取答案的请求，请耐心等候，输入/q 查询最近回答。" + footerText));
         }
+    } else {
+        reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "未知指令。指令列表：\n1. /q 查询历史结果。\n2. /c 清除所有记录。\n3. /a xxx 询问xxx."));
     }
 }
 
