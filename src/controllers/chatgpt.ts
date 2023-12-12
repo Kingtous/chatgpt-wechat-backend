@@ -66,7 +66,7 @@ export async function getChatGPTAnswerSync(content: string, user: string) {
         {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + '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'
+                'Authorization': 'Bearer ' + chatgptKey
             },
             timeout: 60000 * 5, // 5分钟超时
             timeoutErrorMessage: "访问超时了，请稍后再尝试吧"
