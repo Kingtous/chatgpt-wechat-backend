@@ -1,5 +1,4 @@
 import aws from 'aws-sdk';
-import test from 'node:test';
 const s3 = new aws.S3();
 const kBucketName = process.env.BUCKET_NAME || '';
 
@@ -88,16 +87,16 @@ export async function cleanHistoryForUser(user: string) {
     }
 }
 
-test('store', async () => {
-    await cleanHistoryForUser('test');
-    var res = await queryHistoryForUser('test');
-    console.log(res);
-    await storeAskToUser('test', 'asking!')
-    await storeAnswerToUser('test', 'ack!')
-    var res = await queryHistoryForUser('test');
-    console.log(res);
-    console.log(formatHistory(res.objs));
-    await cleanHistoryForUser('test');
-    res = await queryHistoryForUser('test');
-    console.log(res);
-});
+// test('store', async () => {
+//     await cleanHistoryForUser('test');
+//     var res = await queryHistoryForUser('test');
+//     console.log(res);
+//     await storeAskToUser('test', 'asking!')
+//     await storeAnswerToUser('test', 'ack!')
+//     var res = await queryHistoryForUser('test');
+//     console.log(res);
+//     console.log(formatHistory(res.objs));
+//     await cleanHistoryForUser('test');
+//     res = await queryHistoryForUser('test');
+//     console.log(res);
+// });
