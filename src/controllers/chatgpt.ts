@@ -3,9 +3,7 @@ import { FastifyReply } from 'fastify';
 import { chatgptKey } from '../../const';
 import { Transform, TransformCallback } from 'stream';
 import { Bean, queryHistoryForUser } from '../utils/store';
-
-const context = new Map<string, object[]>()
-const MAX_TOKEN_LEN = 4096;
+// const MAX_TOKEN_LEN = 3072;
 
 // <xml>
 //   <ToUserName><![CDATA[toUser]]></ToUserName>
@@ -43,35 +41,32 @@ export async function getChatGPTAnswerSync(content: string, user: string) {
             if (obj.type == 'ask') {
                 contextForUser.push({
                     'role': 'user',
-                    'content': obj.obj,
-                    'name': user
+                    'content': obj.obj
                 });
             } else {
                 contextForUser.push({
                     'role': 'assistant',
                     'content': obj.obj,
-                    'name': user
                 });
             }
         }
     }
     contextForUser.push({
         'role': 'user',
-        'content': content,
-        'name': user
+        'content': content
     });
     const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
             'model': 'gpt-3.5-turbo',
             'messages': contextForUser,
-            'max_tokens': MAX_TOKEN_LEN,
+            // 'max_tokens': MAX_TOKEN_LEN,
             'user': user
         },
         {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + chatgptKey
+                'Authorization': 'Bearer ' + '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'
             },
             timeout: 60000 * 5, // 5分钟超时
             timeoutErrorMessage: "访问超时了，请稍后再尝试吧"

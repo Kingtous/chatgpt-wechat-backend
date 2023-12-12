@@ -46,15 +46,16 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
         reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "已清除历史回答" + footerText));
     } else if (msg.startsWith('/a ')){
         msg = msg.substring(2);
-        if (!(requestingMap.get(xml.FromUserName) ?? false)) {
+        if (requestingMap.get(xml.FromUserName) == undefined
+            || !(requestingMap.get(xml.FromUserName) as boolean)) {
             requestingMap.set(xml.FromUserName, true);
             getChatGPTAnswerSync(msg, xml.FromUserName).then(async (answer) => {
                 await storeAnswerToUser(xml.FromUserName, answer);
                 requestingMap.set(xml.FromUserName, false);
             }).catch((e) => {
-                console.log(e);
+                console.log('请求失败', e);
                 requestingMap.set(xml.FromUserName, false);
-                storeAnswerToUser(xml.FromUserName, '请求失败，请重试。');
+                storeAnswerToUser(xml.FromUserName, '请求失败，请重试。' + e);
             });
             reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "问题是：" + msg + "\n\n请求中，输入/q可查询最近问答。" + footerText));
             // add to s3
