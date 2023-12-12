@@ -20,6 +20,6 @@ export default function configureParser(server: FastifyInstance) {
                 done(err as Error)
             }
         })
-        
+
     })
 }

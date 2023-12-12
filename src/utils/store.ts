@@ -12,7 +12,7 @@ export interface Bean {
     objs: StoreObj[];
 }
 
-function getKeyForUser(user: string): string  {
+function getKeyForUser(user: string): string {
     return user + '.his.json';
 }
 
@@ -48,7 +48,7 @@ async function storeObjToUser(user: string, obj: any, type: string) {
     }).promise();
 }
 
-export async function queryHistoryForUser(user: string) : Promise<any> {
+export async function queryHistoryForUser(user: string): Promise<any> {
     try {
         const objectResp = await s3.getObject({
             Bucket: kBucketName,

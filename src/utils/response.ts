@@ -1,6 +1,6 @@
 import { XMLBuilder } from "fast-xml-parser";
 import axios from 'axios';
-import { wechatAccessToken, wechatToken } from "../../const";
+import { wechatAccessToken } from "../../const";
 
 export function newTextResponse(toUser: string, fromUser: string, text: string) {
     const xmlBuilder = new XMLBuilder({})

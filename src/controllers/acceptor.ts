@@ -44,7 +44,7 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
     } else if (msg === '/c') {
         await cleanHistoryForUser(xml.FromUserName);
         reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "已清除历史回答" + footerText));
-    } else if (msg.startsWith('/a ')){
+    } else if (msg.startsWith('/a ')) {
         msg = msg.substring(2);
         if (requestingMap.get(xml.FromUserName) == undefined
             || !(requestingMap.get(xml.FromUserName) as boolean)) {

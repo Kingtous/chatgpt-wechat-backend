@@ -1,7 +1,6 @@
-import {FastifyInstance} from "fastify";
+import { FastifyInstance } from "fastify";
 import verify from './controllers/verify';
 import acceptor from './controllers/acceptor';
-import axios from 'axios';
 
 // axios.interceptors.request.use(request => {
 //     console.log('Starting Request', JSON.stringify(request, null, 2))
