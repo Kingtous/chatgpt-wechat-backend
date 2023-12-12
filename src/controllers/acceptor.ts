@@ -8,7 +8,7 @@ import { setTimeout } from "timers/promises";
 import { cleanHistoryForUser, formatHistory, queryHistoryForUser, storeAnswerToUser, storeAskToUser } from "../utils/store";
 
 const requestingMap = new Map<string, boolean>()
-const footerText = "\n\n免费不易，进入https://kingtous.cn，关注作者的最新动态～";
+const footerText = "由 khoming 公众号提供服务";
 
 async function handleMsg(xml: any, reply: FastifyReply) {
     if (xml.MsgType === "text") {
@@ -39,7 +39,7 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
             reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您暂时还没有回答，如果您已输入问题，请耐心等待一会哦，输入/q可以再次查询" + footerText));
         } else {
             const ansString = formatHistory(ans.objs);
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.length + "条历史回答：\n\n" + ansString + footerText));
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有" + ans.objs.length + "条历史回答：\n\n" + ansString + footerText));
         }
     } else if (msg === '/c') {
         await cleanHistoryForUser(xml.FromUserName);
@@ -55,11 +55,11 @@ async function handleTextMsg(xml: any, reply: FastifyReply) {
                 requestingMap.set(xml.FromUserName, false);
                 storeAnswerToUser(xml.FromUserName, '请求失败，请重试。');
             });
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您的问题是：" + msg + "\n\n正在获取答案，输入0可查询最近3条回答哦。" + footerText));
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "问题是：" + msg + "\n\n请求中，输入/q可查询最近问答。" + footerText));
             // add to s3
             storeAskToUser(xml.FromUserName, msg);
         } else {
-            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "您有正在获取答案的请求，请耐心等候，输入/q 查询最近回答。" + footerText));
+            reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "已有正在运行的请求，请耐心等候，输入/q 查询最近回答。" + footerText));
         }
     } else {
         reply.send(newTextResponse(xml.FromUserName, xml.ToUserName, "未知指令。指令列表：\n1. /q 查询历史结果。\n2. /c 清除所有记录。\n3. /a xxx 询问xxx."));

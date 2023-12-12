@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { FastifyReply } from 'fastify';
 import { chatgptKey } from '../../const';
-import {Transform, TransformCallback} from 'stream';
+import { Transform, TransformCallback } from 'stream';
+import { Bean, queryHistoryForUser } from '../utils/store';
 
 const context = new Map<string, object[]>()
-const MAX_TOKEN_LEN = 500;
-const CONTEXT_MAX_LEN_PER_USER = 10;
+const MAX_TOKEN_LEN = 4096;
 
 // <xml>
 //   <ToUserName><![CDATA[toUser]]></ToUserName>
@@ -15,29 +15,50 @@ const CONTEXT_MAX_LEN_PER_USER = 10;
 //   <Content><![CDATA[你好]]></Content>
 // </xml>
 class ChatGPTAsyncStream extends Transform {
-  public prefix: string = "<xml><ToUserName><![CDATA[toUser]]></ToUserName><FromUserName><![CDATA[fromUser]]></FromUserName><CreateTime>12345678</CreateTime><MsgType>text</MsgType><Content>"
-  public suffix: string = "</Content></xml>"
+    public prefix: string = "<xml><ToUserName><![CDATA[toUser]]></ToUserName><FromUserName><![CDATA[fromUser]]></FromUserName><CreateTime>12345678</CreateTime><MsgType>text</MsgType><Content>"
+    public suffix: string = "</Content></xml>"
 
-  constructor(toUser: string, fromUser: string) {
-    super()
-    this.prefix = this.prefix.replace("<![CDATA[toUser]]>", toUser).replace("<![CDATA[fromUser]]>", fromUser).replace("12345678", Date.now().toString());
-  }
+    constructor(toUser: string, fromUser: string) {
+        super()
+        this.prefix = this.prefix.replace("<![CDATA[toUser]]>", toUser).replace("<![CDATA[fromUser]]>", fromUser).replace("12345678", Date.now().toString());
+    }
 
-  _transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void {
-    const chunkBuffer: Buffer = chunk;
-    const prefixedChunk = Buffer.from(chunkBuffer+ this.suffix.toString());
-    this.push(prefixedChunk);
-    console.log("transform chatgpt", prefixedChunk);
-    callback();
-  }
+    _transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void {
+        const chunkBuffer: Buffer = chunk;
+        const prefixedChunk = Buffer.from(chunkBuffer + this.suffix.toString());
+        this.push(prefixedChunk);
+        console.log("transform chatgpt", prefixedChunk);
+        callback();
+    }
 }
 
 export async function getChatGPTAnswerSync(content: string, user: string) {
-    var contextForUser = context.get(user) ?? [];
+    // 获取历史
+    var contextForUser = [];
+    var his = await queryHistoryForUser(user);
+    if (his != null) {
+        const bean = his as Bean;
+        for (let index = 0; index < bean.objs.length; index++) {
+            const obj = bean.objs[index];
+            if (obj.type == 'ask') {
+                contextForUser.push({
+                    'role': 'user',
+                    'content': content,
+                    'name': user
+                });
+            } else {
+                contextForUser.push({
+                    'role': 'assistant',
+                    'content': content,
+                    'name': user
+                });
+            }
+        }
+    }
     contextForUser.push({
         'role': 'user',
         'content': content,
-        'name': user 
+        'name': user
     });
     const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
@@ -57,15 +78,6 @@ export async function getChatGPTAnswerSync(content: string, user: string) {
         }
     );
     const resp = response.data.choices[0].message.content;
-    contextForUser.push({
-        'role': 'assistant',
-        'content': resp,
-        'name': "GPT" 
-    });
-    if (contextForUser.length > CONTEXT_MAX_LEN_PER_USER) {
-        contextForUser = contextForUser.slice(contextForUser.length - CONTEXT_MAX_LEN_PER_USER, contextForUser.length);
-    }
-    context.set(user, contextForUser);
     return resp;
 }
 

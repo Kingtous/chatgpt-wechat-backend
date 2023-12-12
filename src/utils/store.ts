@@ -7,7 +7,7 @@ interface StoreObj {
     obj: any;
 }
 
-interface Bean {
+export interface Bean {
     user: string;
     objs: StoreObj[];
 }
