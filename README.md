@@ -11,7 +11,10 @@
 
 ## 如何进行二次开发
 
+本项目依赖aws s3服务作为oss存储，用于存储用户历史问答。
+
 使用`nodemon`，直接输入`npm run dev`运行即可，修改代码后可直接完成启动部署。
+推荐使用cyclic.sh网站进行部署，其提供了免费的s3 aws存储。
 
 
 ## 如何添加配置
@@ -23,6 +26,7 @@ CHATGPT_KEY=    #必选
 WECHAT_TOKEN=   #必选
 WECHAT_APPID=   #可选，没有用过目前
 WECHAT_SECRET=  #可选，没有用过目前
+BUCKET_NAME= #必选
 ```
 
 ## 如何启动
